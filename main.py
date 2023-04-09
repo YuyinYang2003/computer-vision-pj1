@@ -5,6 +5,7 @@ from matplotlib import pyplot as plt
 import os
 import pickle
 def train(model,X,Y,batch_size,epoches,lr_schedule,weight_decay):
+    #输入sample和各个参数，训练model参数
     train_loss, train_acc = [], []
     for epoch in range(epoches):
         loss, acc = model.one_epoch(X, Y, batch_size, epoch,lr_schedule,weight_decay,train = True)
@@ -16,11 +17,11 @@ def train(model,X,Y,batch_size,epoches,lr_schedule,weight_decay):
 
 
 def parameter_sweep_hidden_layer():
-    #parameter
-    lr_sche=[200,200,0.1,0.01]
+    #测试最佳hidden layer dim
+    lr_sche=[200,200,0.1,0.01]  #lr初始设置为200个epoch都是0.1
     batch_size = 256
     epoches = 200
-    weight_decay=0
+    weight_decay=0  #weight decay初始设置为0
     np.random.seed(4)
     hidden_layer_list= np.linspace(10, 780, 10)
     v_acc_list=[]
@@ -33,8 +34,7 @@ def parameter_sweep_hidden_layer():
         valY = utils.to_onehot(valY)
         testY = utils.to_onehot(testY)
         train_loss, train_acc, W= train(model, trainX, trainY, batch_size, epoches,lr_sche,weight_decay)
-
-        v_loss, v_acc = model.one_epoch(valX, valY, batch_size, 1,lr_sche,weight_decay,train = False)
+        v_loss, v_acc = model.one_epoch(valX, valY, batch_size, 1,lr_sche,weight_decay,train = False)   #在计算val sample的结果时，设置train=False，以免更新参数
         v_acc_list.append(v_acc)
     fig = plt.figure(1)
     plt.xlabel("hidden layer dim")
@@ -42,17 +42,18 @@ def parameter_sweep_hidden_layer():
     plt.plot(hidden_layer_list,v_acc_list)
     plt.savefig('./plot/sweep_hidden_layer.png')
     plt.show()
-    return hidden_layer_list[v_acc_list.index(max(v_acc_list))]
+    return int(hidden_layer_list[v_acc_list.index(max(v_acc_list))])
 
 def parameter_sweep_lr(hidden_layer):
+    #测试最佳learning rate，输入上一步骤选择的最佳hidden layer dim
     lr_max=[0.01,0.1,0.5,1,5]
     v_acc_list=[]
     for i in lr_max:
         print("lr={}".format(i))
-        lr_sche=[100,200,i,i/10]
+        lr_sche=[100,200,i,i/10]    #采用的learning rate schedule是前100个epoch保持lr_max，后100个epoch线性下降为lr_max/10
         batch_size = 256
         epoches = 200
-        weight_decay=0
+        weight_decay=0  #weight decay参数还是设置为0
         np.random.seed(4)
         model=mlp_model.MLP_model(hidden_layer)
         trainX, trainY, valX, valY, testX, testY = mnist_data.load_dataset()
@@ -74,6 +75,7 @@ def parameter_sweep_lr(hidden_layer):
     return lr_max[v_acc_list.index(max(v_acc_list))]
 
 def parameter_sweep_weight_decay(hidden_layer,lr):
+    #测试最佳的正则化参数，输入上两个步骤选择的最佳hidden layer dim和learning rate
     lr_sche=[100,200,lr,lr/10]
     batch_size = 256
     epoches = 200
@@ -101,12 +103,9 @@ def parameter_sweep_weight_decay(hidden_layer,lr):
     plt.savefig('./plot/sweep_weight_decay.png')
     plt.show()
     return weight_decay_list[v_acc_list.index(max(v_acc_list))]
-    
-    # testing procedure
-    #test_loss, test_acc = model.one_epoch(testX, testY, batch_size, train = False)
-    #print("Test: Loss={}, Accuracy={}".format(test_loss,test_acc))
 
 def plot_model(hidden_layer,lr,weight_decay):
+    #对于调好参数的模型进行可视化和在test sample上的acc测试
     lr_sche=[100,200,lr,lr/10]
     batch_size = 256
     epoches = 200
@@ -121,18 +120,21 @@ def plot_model(hidden_layer,lr,weight_decay):
     v_loss, v_acc = model.one_epoch(valX, valY, batch_size, 1,lr_sche,weight_decay,train = False)
     print("Val: Loss={}, Accuracy={}".format(v_loss,v_acc))
     epoch_list=np.linspace(1, epoches, epoches)
+    #training acc关于epoch的变化
     fig = plt.figure(4)
     plt.xlabel("epoch")
     plt.ylabel("training accuracy")
     plt.plot(epoch_list,train_acc)
     plt.savefig('./plot/train_acc.png')
     plt.show()
+    #training loss关于epoch的变化
     fig = plt.figure(5)
     plt.xlabel("epoch")
     plt.ylabel("training loss")
     plt.plot(epoch_list,train_loss)
     plt.savefig('./plot/train_loss.png')
     plt.show()
+    #模型参数可视化
     fig = plt.figure(6)
     plt.axis('off')
     plt.imshow(W[0], cmap='RdBu')
@@ -143,6 +145,7 @@ def plot_model(hidden_layer,lr,weight_decay):
     plt.imshow(W[1], cmap='RdBu')
     plt.savefig('./plot/weight_visualization_W2.png')
     plt.show()
+    #模型在test sample上的测试
     test_loss, test_acc = model.one_epoch(testX, testY, batch_size, 1,lr_sche,weight_decay,train = False)
     print("Test: Loss={}, Accuracy={}".format(test_loss,test_acc))
     return model
