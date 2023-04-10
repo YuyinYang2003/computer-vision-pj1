@@ -160,7 +160,7 @@ def main():
     weight_decay=0.0001
     m=plot_model(hidden_layer,lr,weight_decay)
     pickle.dump(m,open("./Model_save/trained_model.dat","wb"))
-    #loaded_model = pickle.load(open("trained_model.dat","rb"))
+    #loaded_model = pickle.load(open("./Model_save/trained_model.dat","rb"))
     #loaded_model.predict(xtest)
     
     
